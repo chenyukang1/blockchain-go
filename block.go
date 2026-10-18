@@ -11,6 +11,7 @@ type Block struct {
 	PrevBlockHash []byte // block headers
 	Hash          []byte // block headers
 	Data          []byte
+	Nonce         int
 }
 
 func (b *Block) SetHash() {
@@ -27,7 +28,9 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Hash:          []byte{},
 		Data:          []byte(data),
 	}
-	block.SetHash()
+	// block.SetHash()
+	pow := NewProofOfWork(block)
+	block.Nonce, block.Hash = pow.Run()
 	return block
 }
 
