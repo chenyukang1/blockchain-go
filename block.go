@@ -32,6 +32,13 @@ func (b *Block) Serialize() []byte {
 	return result.Bytes()
 }
 
+func DeserializeBlock(data []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	decoder.Decode(&block)
+	return &block
+}
+
 func NewBlock(data string, prevBlockHash []byte) *Block {
 	block := &Block{
 		Timestamp:     0,
@@ -39,7 +46,6 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Hash:          []byte{},
 		Data:          []byte(data),
 	}
-	// block.SetHash()
 	pow := NewProofOfWork(block)
 	block.Nonce, block.Hash = pow.Run()
 	return block
