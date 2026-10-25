@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/gob"
 	"strconv"
 )
 
@@ -21,6 +22,23 @@ func (b *Block) SetHash() {
 	b.Hash = hash[:]
 }
 
+func (b *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+	err := encoder.Encode(b)
+	if err != nil {
+		return []byte{}
+	}
+	return result.Bytes()
+}
+
+func DeserializeBlock(data []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	decoder.Decode(&block)
+	return &block
+}
+
 func NewBlock(data string, prevBlockHash []byte) *Block {
 	block := &Block{
 		Timestamp:     0,
@@ -28,7 +46,6 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Hash:          []byte{},
 		Data:          []byte(data),
 	}
-	// block.SetHash()
 	pow := NewProofOfWork(block)
 	block.Nonce, block.Hash = pow.Run()
 	return block
