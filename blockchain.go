@@ -8,8 +8,8 @@ import (
 )
 
 type BlockChain struct {
-	tail []byte
-	db   *leveldb.DB
+	top []byte
+	db  *leveldb.DB
 }
 
 const (
@@ -17,18 +17,17 @@ const (
 )
 
 func NewBlockChain() *BlockChain {
-	op := opt.Options{}
-	db, err := leveldb.OpenFile(BLOCKS_PATH, &op)
+	db, err := leveldb.OpenFile(BLOCKS_PATH, &opt.Options{})
 	if err != nil {
 		log.Panic("open db {} fail", BLOCKS_PATH)
 	}
 
-	tail, err := db.Get([]byte("l"), &opt.ReadOptions{})
+	top, err := db.Get([]byte("l"), &opt.ReadOptions{})
 	if err != nil {
 		log.Panic(err)
 	}
 
-	if tail == nil {
+	if top == nil {
 		tx, err := db.OpenTransaction()
 		genesis := NewGenesisBlock()
 		err = tx.Put(genesis.Hash, genesis.Serialize(), &opt.WriteOptions{})
@@ -43,7 +42,7 @@ func NewBlockChain() *BlockChain {
 		tx.Commit()
 	}
 
-	return &BlockChain{tail, db}
+	return &BlockChain{top, db}
 }
 
 func (bc *BlockChain) AddBlock(data string) {
@@ -68,4 +67,6 @@ func (bc *BlockChain) AddBlock(data string) {
 		log.Panic(err)
 	}
 	tx.Commit()
+
+	bc.top = newBlock.Hash
 }
