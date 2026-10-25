@@ -24,22 +24,22 @@ func NewBlockChain() *BlockChain {
 
 	top, err := db.Get([]byte("l"), &opt.ReadOptions{})
 	if err != nil {
-		log.Panic(err)
-	}
+		if err == leveldb.ErrNotFound {
+			tx, err := db.OpenTransaction()
+			genesis := NewGenesisBlock()
+			err = tx.Put(genesis.Hash, genesis.Serialize(), &opt.WriteOptions{})
+			if err != nil {
+				log.Panic(err)
+			}
 
-	if top == nil {
-		tx, err := db.OpenTransaction()
-		genesis := NewGenesisBlock()
-		err = tx.Put(genesis.Hash, genesis.Serialize(), &opt.WriteOptions{})
-		if err != nil {
+			err = tx.Put([]byte("l"), genesis.Hash, &opt.WriteOptions{})
+			if err != nil {
+				log.Panic(err)
+			}
+			tx.Commit()
+		} else {
 			log.Panic(err)
 		}
-
-		err = tx.Put([]byte("l"), genesis.Hash, &opt.WriteOptions{})
-		if err != nil {
-			log.Panic(err)
-		}
-		tx.Commit()
 	}
 
 	return &BlockChain{top, db}
@@ -69,4 +69,27 @@ func (bc *BlockChain) AddBlock(data string) {
 	tx.Commit()
 
 	bc.top = newBlock.Hash
+}
+
+type BlockChainIterator struct {
+	currentHash []byte
+	db          *leveldb.DB
+}
+
+func (bc *BlockChain) Iterator() *BlockChainIterator {
+	return &BlockChainIterator{bc.top, bc.db}
+}
+
+func (bci *BlockChainIterator) Next() *Block {
+	blockData, err := bci.db.Get([]byte(bci.currentHash), &opt.ReadOptions{})
+	if err != nil {
+		if err == leveldb.ErrNotFound {
+			return nil
+		}
+		log.Panic(err)
+	}
+
+	block := DeserializeBlock(blockData)
+	bci.currentHash = block.PrevBlockHash
+	return block
 }
