@@ -25,17 +25,6 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 	return pow
 }
 
-func (pow *ProofOfWork) prepareData(nonce int) []byte {
-	data := bytes.Join([][]byte{
-		pow.block.PrevBlockHash,
-		pow.block.Data,
-		IntToHex(pow.block.Timestamp),
-		IntToHex(targetBits),
-		IntToHex(int64(nonce)),
-	}, []byte{})
-	return data
-}
-
 func (pow *ProofOfWork) Run() (int, []byte) {
 	fmt.Printf("Mining the block \"%s\"\n", pow.block.Data)
 	var hashInt big.Int
@@ -55,4 +44,23 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	fmt.Println()
 	fmt.Println()
 	return nonce, hash[:]
+}
+
+func (pow *ProofOfWork) prepareData(nonce int) []byte {
+	data := bytes.Join([][]byte{
+		pow.block.PrevBlockHash,
+		pow.block.Data,
+		IntToHex(pow.block.Timestamp),
+		IntToHex(targetBits),
+		IntToHex(int64(nonce)),
+	}, []byte{})
+	return data
+}
+
+func (pow *ProofOfWork) Validate() bool {
+	var hashInt big.Int
+	data := pow.prepareData(pow.block.Nonce)
+	hash := sha256.Sum256(data)
+	hashInt.SetBytes(hash[:])
+	return hashInt.Cmp(pow.target) < 0
 }

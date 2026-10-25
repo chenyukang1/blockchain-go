@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
 type Cli struct {
@@ -61,6 +62,8 @@ func (c *Cli) printChain() {
 		fmt.Printf("Prev hash: %x\n", block.PrevBlockHash)
 		fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
+		pow := NewProofOfWork(block)
+		fmt.Printf("Proof of Work: %s\n", strconv.FormatBool(pow.Validate()))
 		fmt.Println()
 	}
 }
@@ -75,5 +78,5 @@ func (c *Cli) validateArgs() {
 func (c *Cli) printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  addBlock - Add a block to the top of the chain")
-	fmt.Println("  printchain - Print all the blocks of the blockchain")
+	fmt.Println("  printChain - Print all the blocks of the blockchain")
 }
