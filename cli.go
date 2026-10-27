@@ -8,9 +8,7 @@ import (
 	"strconv"
 )
 
-type Cli struct {
-	bc *BlockChain
-}
+type Cli struct{}
 
 func (c *Cli) Run() {
 	c.validateArgs()
@@ -20,6 +18,7 @@ func (c *Cli) Run() {
 	printChainCmd := flag.NewFlagSet("printChain", flag.ExitOnError)
 	blockchainAddress := createBlockchainCmd.String("address", "", "Blockchain address")
 	addBlockData := addBlockCmd.String("data", "", "Block data")
+	printChainData := printChainCmd.String("address", "", "Chain address")
 
 	switch os.Args[1] {
 	case "createBlockchain":
@@ -59,20 +58,27 @@ func (c *Cli) Run() {
 	}
 
 	if printChainCmd.Parsed() {
-		c.printChain()
+		if *printChainData == "" {
+			printChainCmd.Usage()
+			os.Exit(1)
+		}
+		c.addBlock(*printChainData)
+		c.printChain(*printChainData)
 	}
 }
 
 func (c *Cli) createBlockchain(address string) {
-	NewBlockChain(address)
+	bc := NewBlockChain(address)
+	defer bc.db.Close()
 }
 
 func (c *Cli) addBlock(data string) {
 	// c.bc.AddBlock(data)
 }
 
-func (c *Cli) printChain() {
-	it := c.bc.Iterator()
+func (c *Cli) printChain(address string) {
+	bc := NewBlockChain(address)
+	it := bc.Iterator()
 	for {
 		block := it.Next()
 		if block == nil {
@@ -98,6 +104,7 @@ func (c *Cli) validateArgs() {
 
 func (c *Cli) printUsage() {
 	fmt.Println("Usage:")
+	fmt.Println("  createBlockchain - Create a block chain with address")
 	fmt.Println("  addBlock - Add a block to the top of the chain")
 	fmt.Println("  printChain - Print all the blocks of the blockchain")
 }

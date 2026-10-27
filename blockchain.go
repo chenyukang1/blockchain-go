@@ -19,7 +19,7 @@ const (
 func NewBlockChain(address string) *BlockChain {
 	db, err := leveldb.OpenFile(BLOCKS_PATH, &opt.Options{})
 	if err != nil {
-		log.Panic("open db {} fail", BLOCKS_PATH)
+		log.Panicf("open db %s fail: %v", BLOCKS_PATH, err)
 	}
 
 	top, err := db.Get([]byte("l"), &opt.ReadOptions{})
