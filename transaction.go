@@ -1,6 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/gob"
+	"fmt"
+	"log"
+)
 
 type Transaction struct {
 	ID   []byte
@@ -29,10 +35,24 @@ func NewCoinbaseTx(to, data string) *Transaction {
 	txin := TXInput{[]byte{}, -1, data}
 	txout := TXOutput{subsidy, to}
 	tx := Transaction{Vin: []TXInput{txin}, Vout: []TXOutput{txout}}
-	tx.SetID()
+	tx.ID = tx.Hash()
 
 	return &tx
 }
 
-func (tx *Transaction) SetID() {
+func (tx Transaction) Serialize() []byte {
+	var encoded bytes.Buffer
+	enc := gob.NewEncoder(&encoded)
+	err := enc.Encode(tx)
+	if err != nil {
+		log.Panic(err)
+	}
+	return encoded.Bytes()
+}
+
+func (tx *Transaction) Hash() []byte {
+	copy := *tx
+	copy.ID = []byte{}
+	hash := sha256.Sum256(copy.Serialize())
+	return hash[:]
 }
