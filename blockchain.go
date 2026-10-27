@@ -16,7 +16,7 @@ const (
 	BLOCKS_PATH = "/tmp/blocks"
 )
 
-func NewBlockChain() *BlockChain {
+func NewBlockChain(address string) *BlockChain {
 	db, err := leveldb.OpenFile(BLOCKS_PATH, &opt.Options{})
 	if err != nil {
 		log.Panic("open db {} fail", BLOCKS_PATH)
@@ -26,7 +26,8 @@ func NewBlockChain() *BlockChain {
 	if err != nil {
 		if err == leveldb.ErrNotFound {
 			tx, err := db.OpenTransaction()
-			genesis := NewGenesisBlock()
+			cbtx := NewCoinbaseTx(address, "")
+			genesis := NewGenesisBlock(cbtx)
 			err = tx.Put(genesis.Hash, genesis.Serialize(), &opt.WriteOptions{})
 			if err != nil {
 				log.Panic(err)
@@ -45,7 +46,7 @@ func NewBlockChain() *BlockChain {
 	return &BlockChain{top, db}
 }
 
-func (bc *BlockChain) AddBlock(data string) {
+func (bc *BlockChain) AddBlock(block *Block) {
 	if bc.db == nil {
 		log.Panic("not bind db")
 	}
@@ -54,21 +55,21 @@ func (bc *BlockChain) AddBlock(data string) {
 	if err != nil {
 		log.Panic(err)
 	}
+	block.PrevBlockHash = prevBlockHash
 
-	newBlock := NewBlock(data, prevBlockHash)
 	tx, err := bc.db.OpenTransaction()
-	err = tx.Put(newBlock.Hash, newBlock.Serialize(), &opt.WriteOptions{})
+	err = tx.Put(block.Hash, block.Serialize(), &opt.WriteOptions{})
 	if err != nil {
 		log.Panic(err)
 	}
 
-	err = tx.Put([]byte("l"), newBlock.Hash, &opt.WriteOptions{})
+	err = tx.Put([]byte("l"), block.Hash, &opt.WriteOptions{})
 	if err != nil {
 		log.Panic(err)
 	}
 	tx.Commit()
 
-	bc.top = newBlock.Hash
+	bc.top = block.Hash
 }
 
 type BlockChainIterator struct {

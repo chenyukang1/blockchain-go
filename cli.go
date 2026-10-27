@@ -15,11 +15,18 @@ type Cli struct {
 func (c *Cli) Run() {
 	c.validateArgs()
 
+	createBlockchainCmd := flag.NewFlagSet("createBlockchain", flag.ExitOnError)
 	addBlockCmd := flag.NewFlagSet("addBlock", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printChain", flag.ExitOnError)
+	blockchainAddress := createBlockchainCmd.String("address", "", "Blockchain address")
 	addBlockData := addBlockCmd.String("data", "", "Block data")
 
 	switch os.Args[1] {
+	case "createBlockchain":
+		err := createBlockchainCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	case "addBlock":
 		err := addBlockCmd.Parse(os.Args[2:])
 		if err != nil {
@@ -35,6 +42,14 @@ func (c *Cli) Run() {
 		os.Exit(1)
 	}
 
+	if createBlockchainCmd.Parsed() {
+		if *blockchainAddress == "" {
+			createBlockchainCmd.Usage()
+			os.Exit(1)
+		}
+		c.createBlockchain(*blockchainAddress)
+	}
+
 	if addBlockCmd.Parsed() {
 		if *addBlockData == "" {
 			addBlockCmd.Usage()
@@ -48,8 +63,12 @@ func (c *Cli) Run() {
 	}
 }
 
+func (c *Cli) createBlockchain(address string) {
+	NewBlockChain(address)
+}
+
 func (c *Cli) addBlock(data string) {
-	c.bc.AddBlock(data)
+	// c.bc.AddBlock(data)
 }
 
 func (c *Cli) printChain() {
@@ -60,10 +79,12 @@ func (c *Cli) printChain() {
 			break
 		}
 		fmt.Printf("Prev hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
 		pow := NewProofOfWork(block)
 		fmt.Printf("Proof of Work: %s\n", strconv.FormatBool(pow.Validate()))
+		for _, tx := range block.Transactions {
+			fmt.Println(tx)
+		}
 		fmt.Println()
 	}
 }

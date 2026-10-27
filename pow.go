@@ -26,7 +26,7 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 }
 
 func (pow *ProofOfWork) Run() (int, []byte) {
-	fmt.Printf("Mining the block \"%s\"\n", pow.block.Data)
+	fmt.Printf("Mining a new block \n")
 	var hashInt big.Int
 	var hash [32]byte
 	nonce := 0
@@ -49,7 +49,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 func (pow *ProofOfWork) prepareData(nonce int) []byte {
 	data := bytes.Join([][]byte{
 		pow.block.PrevBlockHash,
-		pow.block.Data,
+		pow.block.HashTransactions(),
 		IntToHex(pow.block.Timestamp),
 		IntToHex(targetBits),
 		IntToHex(int64(nonce)),
